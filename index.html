@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Weather App</title>
+  <script>
+    // Runs after the page loads
+    window.onload = function() {
+      const status = document.getElementById("status");
+      const output = document.getElementById("output");
+
+      if (navigator.geolocation) {
+        status.textContent = "Getting your location...";
+        navigator.geolocation.getCurrentPosition(showPosition, showError);
+      } else {
+        status.textContent = "Geolocation is not supported by this browser.";
+      }
+
+      function showPosition(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        status.textContent = `Your location: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+        
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+
+        fetch(apiUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then(data => {
+            const temp = data.current_weather?.temperature;
+            const wind = data.current_weather?.windspeed;
+            const time = data.current_weather?.time;
+
+            output.innerHTML = `
+              <h3>🌤 Current Weather</h3>
+              <p><strong>Temperature:</strong> ${temp} °C</p>
+              <p><strong>Wind Speed:</strong> ${wind} km/h</p>
+              <p><strong>Time:</strong> ${time}</p>
+            `;
+          })
+          .catch(error => {
+            output.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+          });
+      }
+
+      function showError(error) {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            status.textContent = "User denied the request for Geolocation.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            status.textContent = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            status.textContent = "The request to get user location timed out.";
+            break;
+          default:
+            status.textContent = "An unknown error occurred.";
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(to bottom right, #74b9ff, #a29bfe);
+      color: #fff;
+      text-align: center;
+      padding: 50px;
+    }
+    #app {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 30px;
+      border-radius: 15px;
+      display: inline-block;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>🌎 Local Weather App</h1>
+    <p id="status">Detecting location...</p>
+    <div id="output"></div>
+  </div>
+</body>
+</html>
